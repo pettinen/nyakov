@@ -1,0 +1,5 @@
+name: nyakov
+environment:
+  sdk: ">=2.13.3"
+dependencies: 
+  path: ^1.8.0

@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cd "$(dirname "$0")"
+
+/home/nyakov/.local/bin/poetry run uwsgi --yaml uwsgi.yaml
