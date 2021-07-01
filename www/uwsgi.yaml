@@ -4,7 +4,7 @@ uwsgi:
   chmod-socket: 660
   manage-script-name: true
   master: true
-  mount: /=nyakov:app
+  module: nyakov:app
   uid: nyakov
   gid: http
   gevent: 200

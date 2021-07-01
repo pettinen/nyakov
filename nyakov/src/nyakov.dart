@@ -1,79 +1,118 @@
+import "dart:convert";
 import "dart:io";
 import "dart:math";
 
-import 'package:path/path.dart';
+import "package:path/path.dart";
 
 
 final rng = Random();
 
 
 Future<void> main(List<String> args) async {
-  if (args.length != 1) {
-    print("Usage: nyakov <chatlog directory>");
-    exit(1);
+  if (args.length < 1 || args.length > 2) {
+    print("Usage: nyakov <chatlog directory> [<username>]");
+    exit(2);
   }
 
   final dir = Directory(args[0]);
   if (!await dir.exists()) {
     print("Chatlog directory not found.");
-    exit(1);
+    exit(2);
   }
 
-  final lines = dir.list()
-    .where((entity) => entity is File && extension(entity.path) == ".log")
-    .map((entity) => entity as File)
-    .expand((file) => file.readAsLinesSync());
+  var username = args.length == 2 ? args[1] : null;
 
-  final wordMap = <String, Map<String, int>>{"": {}};
-  final alternatives = <String, List<String>>{};
-  final timestamps = <String>{};
+  var wordMap = <String, Map<String, int>>{};
+  var alternatives = <String, List<String>>{};
+  var timestamps = <String>{};
 
-  final messageRegExp = URegExp(r"^(\[\d\d:\d\d:\d\d\])  (.+)$");
-  final outputRegExp = URegExp(r"^\[\d\d:\d\d:\d\d\] \w+:");
-  final normalizeRegExp = URegExp(r"[-';!?_@,.]");
+  var dataFile = File(join(args[0], "nyakov-data.json"));
 
-  await for (var line in lines) {
-    final match = messageRegExp.firstMatch(line);
-    if (match == null)
-      continue;
+  if (await dataFile.exists()) {
+    var data = jsonDecode(await dataFile.readAsString());
 
-    final message = match[2];
-    if (message == null)
-      continue;
-
-    final words = message.split(URegExp(r"\s+"));
-    if (words.length < 3)
-      continue;
-
-    for (var i = -1; i < words.length; i++) {
-      final current = i == -1 ? "" : words[i];
-      final next = i == words.length - 1 ? "" : words[i + 1];
-
-      final currentNorm = normalizeWord(current, normalizeRegExp);
-      final nextNorm = normalizeWord(next, normalizeRegExp);
-
-      if (alternatives[currentNorm] == null)
-        alternatives[currentNorm] = [];
-      alternatives[currentNorm]?.add(current);
-
-      if (!wordMap.containsKey(currentNorm))
-        wordMap[currentNorm] = {};
-
-      int? value = wordMap[currentNorm]![nextNorm];
-      if (value == null)
-        value = 0;
-
-      value++;
-      wordMap[currentNorm]![nextNorm] = value;
+    for (final entry1 in data["wordMap"].entries) {
+      wordMap[entry1.key] = {};
+      for (final entry2 in entry1.value.entries)
+        wordMap[entry1.key]?[entry2.key] = entry2.value;
     }
 
-    timestamps.add(match[1]!);
+    for (final entry in data["alternatives"].entries) {
+      alternatives[entry.key] = [];
+      for (final value in entry.value)
+        alternatives[entry.key]?.add(value);
+    }
+
+    for (final timestamp in data["timestamps"])
+      timestamps.add(timestamp);
+  } else {
+    final lines = dir.list()
+      .where((entity) => entity is File && extension(entity.path) == ".log")
+      .map((entity) => entity as File)
+      .expand((file) => file.readAsLinesSync());
+
+    wordMap = {"": {}};
+    alternatives = {};
+    timestamps = {};
+
+    final messageRegExp = URegExp(r"^(\[\d\d:\d\d:\d\d\])  (.+)$");
+
+    await for (var line in lines) {
+      final match = messageRegExp.firstMatch(line);
+      if (match == null)
+        continue;
+
+      final message = match[2];
+      if (message == null)
+        continue;
+
+      final words = message.split(URegExp(r"\s+"));
+      if (words.length < 3)
+        continue;
+
+      for (var i = -1; i < words.length; i++) {
+        final current = i == -1 ? "" : words[i];
+        final next = i == words.length - 1 ? "" : words[i + 1];
+
+        final currentNorm = normalizeWord(current);
+        final nextNorm = normalizeWord(next);
+
+        if (alternatives[currentNorm] == null)
+          alternatives[currentNorm] = [];
+        alternatives[currentNorm]?.add(current);
+
+        if (!wordMap.containsKey(currentNorm))
+          wordMap[currentNorm] = {};
+
+        int? value = wordMap[currentNorm]?[nextNorm];
+        if (value == null)
+          value = 0;
+
+        value++;
+        wordMap[currentNorm]?[nextNorm] = value;
+      }
+      timestamps.add(match[1]!);
+    }
+
+    var data = {
+      "wordMap": wordMap,
+      "alternatives": alternatives,
+      "timestamps": timestamps.toList(),
+    };
+    await dataFile.writeAsString(jsonEncode(data));
+  }
+
+  if (username != null && !wordMap.containsKey(normalizeWord("$username:"))) {
+    print("No such user.");
+    exit(1);
   }
 
   List<String> words;
   String output;
+  final outputRegExp = URegExp(r"^\[\d\d:\d\d:\d\d\] \w+:");
+
   do {
-    words = generateWords(wordMap, alternatives, timestamps);
+    words = generateWords(wordMap, alternatives, timestamps, username);
     output = words.join(" ");
   } while (words.length < 4 || !outputRegExp.hasMatch(output));
   print(output);
@@ -84,11 +123,17 @@ List<String> generateWords(
   Map<String, Map<String, int>> wordMap,
   Map<String, List<String>> alternatives,
   Set<String> timestamps,
+  [String? username]
 ) {
-  final normalizedWords = <String>[];
-  normalizedWords.add(randomElement(timestamps));
+  final normalizedUsername = username != null ? normalizeWord("$username:") : null;
 
-  var word = weightedRandom(wordMap[""]!);
+  final normalizedWords = [
+    randomElement(timestamps),
+    if (normalizedUsername != null) normalizedUsername,
+  ];
+
+  var firstWord = username != null ? normalizedUsername : "";
+  var word = weightedRandom(wordMap[firstWord]!);
   while (word.isNotEmpty) {
     normalizedWords.add(word);
     word = weightedRandom(wordMap[word]!);
@@ -105,8 +150,8 @@ List<String> generateWords(
 }
 
 
-String normalizeWord(String word, RegExp pattern) {
-  final normalized = word.toLowerCase().replaceAll(pattern, "");
+String normalizeWord(String word) {
+  final normalized = word.toLowerCase().replaceAll(URegExp(r"""[-';!?_@,."']"""), "");
   if (normalized.isEmpty)
     return word.toLowerCase();
   return normalized;
