@@ -119,13 +119,6 @@ import "primeflex/primeflex.css";
 import "primeicons/primeicons.css";
 
 
-const sleep = async function(duration: number): Promise<void> {
-  return new Promise(resolve => {
-    setTimeout(resolve, duration);
-  });
-};
-
-
 // Mock i18n
 const _ = function(message: string): string {
   if (message === "unexpected-error")
@@ -190,12 +183,6 @@ export default defineComponent({
         if (this.user)
           url += `?user=${this.user}`;
         let response = await fetch(url);
-
-        // One retry for the common gateway failure
-        if (response.status === 502) {
-          await sleep(1000);
-          response = await fetch(url);
-        }
 
         const data = await response.json() as APIResponse;
         if (response.ok) {

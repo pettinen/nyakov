@@ -5,5 +5,5 @@ export NYAKOV_PORT=50903
 cd "$(dirname "$0")/www-backend"
 /home/nyakov/.local/bin/poetry run uwsgi --yaml uwsgi.yaml
 
-cd ../nyakov
-build/server chatlogs
+cd ..
+nyakov/build/server chatlogs

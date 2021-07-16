@@ -30,80 +30,52 @@ Future<void> main(List<String> args) async {
   var alternatives = <String, List<String>>{};
   var timestamps = <String>{};
 
-  var dataFile = File(join(args[0], "nyakov-data.json"));
+  final lines = dir.list()
+    .where((entity) => entity is File && extension(entity.path) == ".log")
+    .map((entity) => entity as File)
+    .expand((file) => file.readAsLinesSync());
 
-  if (await dataFile.exists()) {
-    var data = jsonDecode(await dataFile.readAsString());
+  wordMap = {"": {}};
+  alternatives = {};
+  timestamps = {};
 
-    for (final entry1 in data["wordMap"].entries) {
-      wordMap[entry1.key] = {};
-      for (final entry2 in entry1.value.entries)
-        wordMap[entry1.key]?[entry2.key] = entry2.value;
+  final messageRegExp = URegExp(r"^(\[\d\d:\d\d:\d\d\])  (.+)$");
+
+  await for (var line in lines) {
+    final match = messageRegExp.firstMatch(line);
+    if (match == null)
+      continue;
+
+    final message = match[2];
+    if (message == null)
+      continue;
+
+    final words = message.split(URegExp(r"\s+"));
+    if (words.length < 3)
+      continue;
+
+    for (var i = -1; i < words.length; i++) {
+      final current = i == -1 ? "" : words[i];
+      final next = i == words.length - 1 ? "" : words[i + 1];
+
+      final currentNorm = normalizeWord(current);
+      final nextNorm = normalizeWord(next);
+
+      if (alternatives[currentNorm] == null)
+        alternatives[currentNorm] = [];
+      alternatives[currentNorm]?.add(current);
+
+      if (!wordMap.containsKey(currentNorm))
+        wordMap[currentNorm] = {};
+
+      int? value = wordMap[currentNorm]?[nextNorm];
+      if (value == null)
+        value = 0;
+
+      value++;
+      wordMap[currentNorm]?[nextNorm] = value;
     }
-
-    for (final entry in data["alternatives"].entries) {
-      alternatives[entry.key] = [];
-      for (final value in entry.value)
-        alternatives[entry.key]?.add(value);
-    }
-
-    for (final timestamp in data["timestamps"])
-      timestamps.add(timestamp);
-  } else {
-    final lines = dir.list()
-      .where((entity) => entity is File && extension(entity.path) == ".log")
-      .map((entity) => entity as File)
-      .expand((file) => file.readAsLinesSync());
-
-    wordMap = {"": {}};
-    alternatives = {};
-    timestamps = {};
-
-    final messageRegExp = URegExp(r"^(\[\d\d:\d\d:\d\d\])  (.+)$");
-
-    await for (var line in lines) {
-      final match = messageRegExp.firstMatch(line);
-      if (match == null)
-        continue;
-
-      final message = match[2];
-      if (message == null)
-        continue;
-
-      final words = message.split(URegExp(r"\s+"));
-      if (words.length < 3)
-        continue;
-
-      for (var i = -1; i < words.length; i++) {
-        final current = i == -1 ? "" : words[i];
-        final next = i == words.length - 1 ? "" : words[i + 1];
-
-        final currentNorm = normalizeWord(current);
-        final nextNorm = normalizeWord(next);
-
-        if (alternatives[currentNorm] == null)
-          alternatives[currentNorm] = [];
-        alternatives[currentNorm]?.add(current);
-
-        if (!wordMap.containsKey(currentNorm))
-          wordMap[currentNorm] = {};
-
-        int? value = wordMap[currentNorm]?[nextNorm];
-        if (value == null)
-          value = 0;
-
-        value++;
-        wordMap[currentNorm]?[nextNorm] = value;
-      }
-      timestamps.add(match[1]!);
-    }
-
-    var data = {
-      "wordMap": wordMap,
-      "alternatives": alternatives,
-      "timestamps": timestamps.toList(),
-    };
-    await dataFile.writeAsString(jsonEncode(data));
+    timestamps.add(match[1]!);
   }
 
   HttpServer.bind(InternetAddress.loopbackIPv4, listenPort).then((server) {
