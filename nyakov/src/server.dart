@@ -9,8 +9,8 @@ final rng = Random();
 
 
 Future<void> main(List<String> args) async {
-  if (args.length < 1 || args.length > 2) {
-    print("Usage: nyakov <chatlog directory> [<username>]");
+  if (args.length != 1) {
+    print("Usage: nyakov <chatlog directory>");
     exit(2);
   }
 
@@ -20,7 +20,11 @@ Future<void> main(List<String> args) async {
     exit(2);
   }
 
-  var username = args.length == 2 ? args[1] : null;
+  final listenPort = int.tryParse(Platform.environment["NYAKOV_PORT"] ?? "", radix: 10);
+  if (listenPort == null || listenPort < 49152 || listenPort > 65535) {
+    print("NYAKOV_PORT must be an integer between 49152 and 65535.");
+    exit(2);
+  }
 
   var wordMap = <String, Map<String, int>>{};
   var alternatives = <String, List<String>>{};
@@ -102,20 +106,32 @@ Future<void> main(List<String> args) async {
     await dataFile.writeAsString(jsonEncode(data));
   }
 
-  if (username != null && !wordMap.containsKey(normalizeWord("$username:"))) {
-    print("No such user.");
-    exit(1);
-  }
+  HttpServer.bind(InternetAddress.loopbackIPv4, listenPort).then((server) {
+    server.listen((HttpRequest request) {
+      List<String> words;
+ 
+      var username = request.uri.queryParameters["user"];
+      if (username is String && username.isEmpty)
+        username = null;
+      if (username != null && !wordMap.containsKey(normalizeWord("$username:"))) {
+        request.response.statusCode = HttpStatus.badRequest;
+        request.response.write(jsonEncode({"error": "user-not-found"}));
+        request.response.close();
+        return;
+      }
 
-  List<String> words;
-  String output;
-  final outputRegExp = URegExp(r"^\[\d\d:\d\d:\d\d\] \w+:");
+      do {
+        words = generateWords(wordMap, alternatives, timestamps, username);
+      } while (words.length < 4);
 
-  do {
-    words = generateWords(wordMap, alternatives, timestamps, username);
-    output = words.join(" ");
-  } while (words.length < 4 || !outputRegExp.hasMatch(output));
-  print(output);
+      request.response.write(jsonEncode({
+        "timestamp": words[0],
+        "username": words[1],
+        "words": words.sublist(2),
+      }));
+      request.response.close();
+    });
+  });
 }
 
 

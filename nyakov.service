@@ -1,0 +1,14 @@
+[Unit]
+Description=Nyakov Markov chain generator
+After=network.target
+
+[Service]
+ExecStart=bash run
+RuntimeDirectory=nyakov
+User=nyakov
+Group=http
+WorkingDirectory=/home/nyakov/nyakov
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

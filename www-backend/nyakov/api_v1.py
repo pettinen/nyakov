@@ -1,7 +1,7 @@
 import os
 import re
-import subprocess
 
+import requests
 from flask import Blueprint, request
 
 
@@ -704,31 +704,21 @@ def generate():
     except UnicodeDecodeError:
         pass
 
-    cmdline = ["./build/nyakov", "chatlogs"]
-    if user:
-        cmdline.append(user)
+    port = os.environ["NYAKOV_PORT"]
+    params = {"user": user} if user else None
+    response = requests.get(f"http://localhost:{port}/", params)
 
-    os.chdir("/home/nyakov/nyakov/nyakov")
-    process = subprocess.run(
-        cmdline,
-        capture_output=True,
-        encoding="UTF-8",
-    )
-    if process.returncode == 0:
-        output = process.stdout.strip()
-    elif process.returncode == 1:
-        return {"error": "user-not-found"}, 400
-    else:
+    try:
+        data = response.json()
+    except json.JSONDecodeError:
         return {"error": "unexpected-error"}, 500
 
-    match = re.fullmatch(r"\[(\d\d:\d\d:\d\d)\] (\w+): (.+)", output, re.ASCII)
-    if not match:
-        return {"error": "unexpected-error"}, 500
+    if response.status_code != 200:
+        return data, response.status_code
 
-    timestamp, username, message = match.groups()
     parsed = []
 
-    for word in message.split():
+    for word in data["words"]:
         if word in twitch_emotes:
             parsed.append({
                 "type": "emote",
@@ -748,6 +738,7 @@ def generate():
 
     return {
         "message": parsed,
-        "timestamp": timestamp,
-        "username": username,
+        "timestamp": data["timestamp"],
+        "username": data["username"],
     }
+
