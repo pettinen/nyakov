@@ -88,7 +88,7 @@ export default defineComponent({
         ? escapeDiscord
         : (x: string): string => x;
 
-      const words = [`[${this.data.timestamp}]`, `${this.data.username}:`].map(escapeFn);
+      const words = [this.data.timestamp, this.data.username].map(escapeFn);
 
       for (const node of this.data.message) {
         if (node.type === "emote") {
