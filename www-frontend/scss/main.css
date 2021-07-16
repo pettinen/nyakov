@@ -1,0 +1,27 @@
+body {
+  background: var(--indigo-900);
+  color: var(--text-color);
+}
+
+header, main {
+  background: var(--indigo-800);
+}
+
+.no-round-left {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+.no-round-right {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.p-accordion-content {
+  padding: 0.5rem 0 !important;
+}
+
+.p-accordion-toggle-icon {
+  order: unset !important;
+    margin-left: unset !important;
+}
