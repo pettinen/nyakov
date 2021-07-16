@@ -48,6 +48,7 @@ export default defineComponent({
 
 <style scoped>
 .emote {
-  max-height: 1.6rem;
+  max-width: 2rem;
+  max-height: 2rem;
 }
 </style>
