@@ -7,5 +7,5 @@ uwsgi:
   module: nyakov:app
   uid: nyakov
   gid: http
-  gevent: 200
+  gevent: 20
   workers: 8
