@@ -10,6 +10,7 @@ I have this repository sitting at `/home/nyakov/nyakov/`. The generator server l
 1. To build the generator server:
 ```sh
 cd nyakov/
+dart pub get
 dart2native -o build/server src/server.dart
 ```
 
