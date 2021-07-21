@@ -4,6 +4,7 @@ After=network.target
 
 [Service]
 ExecStart=bash run
+LogsDirectory=nyakov
 RuntimeDirectory=nyakov
 User=nyakov
 Group=http

@@ -6,6 +6,8 @@ import {VueLoaderPlugin} from "vue-loader";
 import {DefinePlugin} from "webpack";
 
 
+const ROOT_PATH = "/";
+
 export default {
   entry: "./src/main.ts",
   experiments: {
@@ -56,10 +58,11 @@ export default {
     library: {
       type: "module",
     },
+    publicPath: ROOT_PATH,
   },
   plugins: [
     new DefinePlugin({
-      baseURL: JSON.stringify("/"),
+      "process.env.ROOT_PATH": JSON.stringify(ROOT_PATH),
     }),
     new HtmlWebpackPlugin({
       favicon: "assets/favicon.png",			 

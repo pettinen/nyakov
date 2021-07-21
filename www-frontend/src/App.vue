@@ -179,7 +179,7 @@ export default defineComponent({
       history.replaceState({user: this.user}, "nyakov", newURL.href);
 
       try {
-        let url = "/api/v1/generate";
+        let url = `${process.env.ROOT_PATH}api/v1/generate`;
         if (this.user)
           url += `?user=${this.user}`;
         const response = await fetch(url);
