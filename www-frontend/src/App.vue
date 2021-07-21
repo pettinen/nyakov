@@ -182,7 +182,7 @@ export default defineComponent({
         let url = "/api/v1/generate";
         if (this.user)
           url += `?user=${this.user}`;
-        let response = await fetch(url);
+        const response = await fetch(url);
 
         const data = await response.json() as APIResponse;
         if (response.ok) {
