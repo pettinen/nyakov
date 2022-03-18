@@ -10,8 +10,9 @@ I have this repository sitting at `/home/nyakov/nyakov/`. The generator server l
 1. To build the generator server:
 ```sh
 cd nyakov/
+mkdir build
 dart pub get
-dart2native -o build/server src/server.dart
+dart compile exe -o build/server src/server.dart
 ```
 
 2. To install Python dependencies:
@@ -20,7 +21,7 @@ cd www-backend/
 poetry install
 ```
 
-3. To build the frontend (I used `pnpm` but `npm` should work too):
+3. To build the frontend (I use `pnpm` but `npm` should work too):
 ```sh
 cd www-frontend/
 pnpm install
@@ -29,7 +30,7 @@ pnpm build
 
 4. To run as a systemd service:
 ```sh
-cp nyakov.service /etc/systemd/system/
+cp nyakov.service /usr/local/lib/systemd/system/
 systemctl enable --now nyakov
 ```
 

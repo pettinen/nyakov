@@ -1,5 +1,5 @@
 name: nyakov
 environment:
-  sdk: ">=2.13.3"
+  sdk: ">=2.16.1"
 dependencies: 
-  path: ^1.8.0
+  path: ^1.8.1

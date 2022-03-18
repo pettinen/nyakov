@@ -1,6 +1,6 @@
 import PrimeVue from "primevue/config";
 import ToastService from "primevue/toastservice";
-import {createApp} from "vue";
+import { createApp } from "vue";
 
 import App from "@/App.vue";
 
