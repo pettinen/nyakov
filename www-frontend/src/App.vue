@@ -10,7 +10,7 @@
 
   <main class="p-component p-p-3">
     <div v-if="current">
-      <Quote
+      <FakeQuote
         v-if="current"
         class="p-component"
         :data="current"
@@ -54,7 +54,7 @@
             :key="item"
             class="history-item p-d-flex p-jc-between p-ai-center p-px-3"
           >
-            <Quote :data="item" />
+            <FakeQuote :data="item" />
             <CopyButton
               :data="item"
               class="p-ml-2"
@@ -96,7 +96,7 @@
 </template>
 
 <script lang="ts">
-import {defineComponent} from "vue";
+import { defineComponent } from "vue";
 
 import Accordion from "primevue/accordion";
 import AccordionTab from "primevue/accordiontab";
@@ -107,9 +107,9 @@ import InputText from "primevue/inputtext";
 import Toast from "primevue/toast";
 
 import CopyButton from "@/components/CopyButton.vue";
-import Quote from "@/components/Quote.vue";
+import FakeQuote from "@/components/FakeQuote.vue";
 
-import type {APIError, APIResponse, APISuccess} from "./types";
+import type { APIError, APIResponse, APISuccess } from "./types";
 
 import "normalize.css";
 import "@/../scss/main.css";
@@ -147,8 +147,8 @@ export default defineComponent({
     CopyButton,  // eslint-disable-line @typescript-eslint/no-unsafe-assignment
     Dialog,
     Divider,
+    FakeQuote,  // eslint-disable-line @typescript-eslint/no-unsafe-assignment
     InputText,
-    Quote,  // eslint-disable-line @typescript-eslint/no-unsafe-assignment
     Toast,
   },
   data() {
@@ -161,8 +161,8 @@ export default defineComponent({
       user: new URLSearchParams(location.search).get("user"),
     } as AppData;
   },
-  async mounted(): Promise<void> {
-    await this.fetch();
+  mounted(): void {
+    void this.fetch();
   },
   methods: {
     async fetch(): Promise<void> {
@@ -176,10 +176,10 @@ export default defineComponent({
         newURL.searchParams.set("user", this.user);
       else
         newURL.searchParams.delete("user");
-      history.replaceState({user: this.user}, "nyakov", newURL.href);
+      history.replaceState({ user: this.user }, "nyakov", newURL.href);
 
       try {
-        let url = `${process.env.ROOT_PATH}api/v1/generate`;
+        let url = `${process.env.ROOT_PATH ?? ""}/api/v1/generate`;
         if (this.user)
           url += `?user=${this.user}`;
         const response = await fetch(url);
