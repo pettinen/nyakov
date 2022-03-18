@@ -28,9 +28,9 @@
 </template>
 
 <script lang="ts">
-import {defineComponent} from "vue";
+import { defineComponent } from "vue";
 
-import type {EmoteNode} from "../types";
+import type { EmoteNode } from "../types";
 
 
 export default defineComponent({

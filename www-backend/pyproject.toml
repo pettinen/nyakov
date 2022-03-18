@@ -6,11 +6,11 @@ authors = ["Jeremias Pettinen <hi@jeremi.as>"]
 license = "ISC"
 
 [tool.poetry.dependencies]
-Flask = "^2.0.1"
-gevent = "^21.1.2"
+Flask = "^2.0.3"
+gevent = "^21.12.0"
 python = "^3.9"
 uWSGI = {url = "https://github.com/pettinen/uwsgi/archive/refs/heads/uwsgi-2.0.tar.gz"}
-requests = "^2.26.0"
+requests = "^2.27.1"
 
 [tool.poetry.dev-dependencies]
 

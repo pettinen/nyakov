@@ -8,12 +8,12 @@
 </template>
 
 <script lang="ts">
-import {defineComponent} from "vue";
-import type {PropType} from "vue";
+import { defineComponent } from "vue";
+import type { PropType } from "vue";
 
 import SplitButton from "primevue/splitbutton";
 
-import type {APISuccess} from "../types";
+import type { APISuccess } from "../types";
 
 
 const staticEmotes: Record<string, string> = {
@@ -109,7 +109,7 @@ export default defineComponent({
       }
 
       await navigator.clipboard.writeText(words.join(" "));
-      this.$toast.add({severity: "success", detail: "Copied!", life: 1000});
+      this.$toast.add({ severity: "success", detail: "Copied!", life: 1000 });
     },
     async copyRaw(): Promise<void> {
       await this.copy();

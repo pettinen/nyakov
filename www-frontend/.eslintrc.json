@@ -1,4 +1,7 @@
 {
+  "env": {
+    "node": true
+  },
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
@@ -60,7 +63,7 @@
     "@typescript-eslint/no-use-before-define": "error",
     "@typescript-eslint/no-useless-constructor": "error",
     "@typescript-eslint/non-nullable-type-assertion-style": "error",
-    "@typescript-eslint/object-curly-spacing": "error",
+    "@typescript-eslint/object-curly-spacing": ["error", "always"],
     "@typescript-eslint/prefer-for-of": "error",
     "@typescript-eslint/prefer-function-type": "error",
     "@typescript-eslint/prefer-includes": "error",
@@ -185,7 +188,7 @@
     "no-useless-rename": "error",
     "no-useless-return": "error",
     "no-var": "error",
-    "no-void": "error",
+    "no-void": ["error", {"allowAsStatement": true}],
     "no-whitespace-before-property": "error",
     "nonblock-statement-body-position": ["error", "below"],
     "object-curly-newline": "error",
