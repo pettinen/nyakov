@@ -121,7 +121,7 @@
     "keyword-spacing": "off",
     "linebreak-style": "error",
     "max-len": ["error", {
-      "code": 88,
+      "code": 100,
       "ignoreRegExpLiterals": true,
       "ignoreStrings": true,
       "ignoreTemplateLiterals": true

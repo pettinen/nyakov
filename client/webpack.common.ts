@@ -6,7 +6,7 @@ import {VueLoaderPlugin} from "vue-loader";
 import {DefinePlugin} from "webpack";
 
 
-const ROOT_PATH = "/nyakov";
+const ROOT_PATH = "/";
 
 export default {
   entry: "./src/main.ts",

@@ -1,16 +1,13 @@
 <template>
   <p class="p-component p-d-flex p-flex-wrap p-ai-center">
-    <span
+    <time
       class="p-mr-1"
       v-text="data.timestamp"
     />
-    <span
-      class="p-mr-1"
-      v-text="data.username"
-    />
+    <span class="p-mr-1">{{ data.username }}:</span>
     <template v-for="(node, index) in data.message">
       <span
-        v-if="node.type === 'word'"
+        v-if="node.type === 'text'"
         :key="{node, index}"
         class="p-mr-1"
         v-text="node.text"

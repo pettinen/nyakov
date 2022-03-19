@@ -18,11 +18,13 @@
       <CopyButton :data="current" />
     </div>
     <p
-      v-else-if="error"
+      v-for="error in errors"
+      :key="error"
       class="error p-component p-m-2"
-      v-text="error"
-    />
-    <Divider v-if="current || error" />
+    >
+      {{ errorMessage(error) }}
+    </p>
+    <Divider v-if="current || errors.length > 0" />
 
     <div class="p-d-flex">
       <span class="p-float-label">
@@ -31,7 +33,7 @@
           v-model="user"
           class="no-round-right"
           :disabled="loading"
-          @keyup.enter="fetch"
+          @keyup.enter="fetchQuote"
         />
         <label for="user">Twitch user (optional)</label>
       </span>
@@ -39,7 +41,7 @@
         class="no-round-left p-button-info"
         label="New&nbsp;quote"
         :loading="loading"
-        @click="fetch"
+        @click="fetchQuote"
       />
     </div>
 
@@ -79,6 +81,19 @@
       with <a href="https://en.wikipedia.org/wiki/Markov_chain">Markov chains</a>.
     </p>
     <p>Code available on <a href="https://github.com/pettinen/nyakov">GitHub</a>.</p>
+    <div v-if="sources">
+      <h3>Chatlog sources:</h3>
+      <ul>
+        <li
+          v-for="({ lines, logFiles, first, last }, channel) in sources"
+          :key="channel"
+        >
+          <a :href="`https://www.twitch.tv/${channel}`">{{ channel }}</a>:
+          {{ formatThousands(logFiles) }} days of chatlogs with {{ formatThousands(lines) }} lines,
+          from <time>{{ first }}</time> to <time>{{ last }}</time>
+        </li>
+      </ul>
+    </div>
 
     <template #footer>
       <p class="p-d-flex p-ai-center">
@@ -96,6 +111,7 @@
 </template>
 
 <script lang="ts">
+import { format } from "d3-format";
 import { defineComponent } from "vue";
 
 import Accordion from "primevue/accordion";
@@ -109,7 +125,7 @@ import Toast from "primevue/toast";
 import CopyButton from "@/components/CopyButton.vue";
 import FakeQuote from "@/components/FakeQuote.vue";
 
-import type { APIError, APIResponse, APISuccess } from "./types";
+import type { APIErrors, APIResponse, APISources, APISuccess } from "./types";
 
 import "normalize.css";
 import "@/../scss/main.css";
@@ -119,23 +135,21 @@ import "primeflex/primeflex.css";
 import "primeicons/primeicons.css";
 
 
-// Mock i18n
-const _ = function(message: string): string {
-  if (message === "unexpected-error")
-    return "Oopsie woopsie! We made a fucky wucky!! The code monkeys at our headquarters are working VEWY HAWD to fix this!";
-  else if (message === "user-not-found")
-    return "No such user.";
-  return message;
-};
-
+interface Source {
+  lines: number;
+  logFiles: number;
+  first: string;
+  last: string;
+}
 
 interface AppData {
   aboutVisible: boolean;
   current: APISuccess | null;
-  error: string | null;
+  errors: string[];
   history: APISuccess[];
   loading: boolean;
   user: string | null;
+  sources: Record<string, Source> | null;
 }
 
 
@@ -155,17 +169,19 @@ export default defineComponent({
     return {
       aboutVisible: false,
       current: null,
-      error: null,
+      errors: [],
       history: [],
       loading: false,
       user: new URLSearchParams(location.search).get("user"),
+      sources: null,
     } as AppData;
   },
   mounted(): void {
-    void this.fetch();
+    void this.fetchQuote();
+    void this.fetchSources();
   },
   methods: {
-    async fetch(): Promise<void> {
+    async fetchQuote(): Promise<void> {
       if (this.loading)
         return;
 
@@ -179,7 +195,7 @@ export default defineComponent({
       history.replaceState({ user: this.user }, "nyakov", newURL.href);
 
       try {
-        let url = `${process.env.ROOT_PATH ?? ""}/api/v1/generate`;
+        let url = `${process.env.ROOT_PATH ?? "/"}api/v1/generate`;
         if (this.user)
           url += `?user=${this.user}`;
         const response = await fetch(url);
@@ -187,19 +203,34 @@ export default defineComponent({
         const data = await response.json() as APIResponse;
         if (response.ok) {
           const successResponse = data as APISuccess;
-          this.error = null;
+          this.errors = [];
           this.current = successResponse;
           this.history.unshift(successResponse);
         } else {
-          const errorResponse = data as APIError;
-          this.error = _(errorResponse.error);
+          const errorResponse = data as APIErrors;
+          this.errors = errorResponse.errors.map(error => error.id);
           this.current = null;
         }
       } catch (error: unknown) {
-        this.error = _("unexpected-error");
+        this.errors = ["internal-server-error"];
         this.current = null;
       }
       this.loading = false;
+    },
+    async fetchSources(): Promise<void> {
+      const url = `${process.env.ROOT_PATH ?? "/"}api/v1/sources`;
+      const res = await fetch(url);
+      this.sources = await res.json() as APISources;
+    },
+    formatThousands(num: number): string {
+      return format(",")(num);
+    },
+    errorMessage(message: string): string {
+      if (message === "internal-server-error")
+        return "Oopsie woopsie! We made a fucky wucky!! The code monkeys at our headquarters are working VEWY HAWD to fix this!";
+      else if (message === "user-not-found")
+        return "No such user.";
+      return message;
     },
   },
 });

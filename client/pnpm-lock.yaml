@@ -1,12 +1,14 @@
 lockfileVersion: 5.3
 
 specifiers:
+  '@types/d3-format': ^3.0.1
   '@types/node': ^17.0.21
   '@typescript-eslint/eslint-plugin': ^5.15.0
   '@typescript-eslint/parser': ^5.15.0
   '@vue/compiler-sfc': ^3.2.31
   '@vue/eslint-config-typescript': ^10.0.0
   css-loader: ^6.7.1
+  d3-format: ^3.1.0
   eslint: ^8.11.0
   eslint-plugin-vue: ^8.5.0
   file-loader: ^6.2.0
@@ -28,6 +30,8 @@ specifiers:
   webpack-cli: ^4.9.2
 
 dependencies:
+  '@types/d3-format': 3.0.1
+  d3-format: 3.1.0
   normalize.css: 8.0.1
   primeflex: 2.0.0
   primeicons: 4.1.0
@@ -148,6 +152,10 @@ packages:
   /@tsconfig/node16/1.0.2:
     resolution: {integrity: sha512-eZxlbI8GZscaGS7kkc/trHTT5xgrjH3/1n2JDwusC9iahPKWMRvRjJSAN5mCXviuTGQ/lHnhvv8Q1YTpnfz9gA==}
     dev: true
+
+  /@types/d3-format/3.0.1:
+    resolution: {integrity: sha512-5KY70ifCCzorkLuIkDe0Z9YTf9RR2CjBX1iaJG+rgM/cPP+sO+q9YdQ9WdhQcgPj1EQiJ2/0+yUkkziTG6Lubg==}
+    dev: false
 
   /@types/eslint-scope/3.7.3:
     resolution: {integrity: sha512-PB3ldyrcnAicT35TWPs5IcwKD8S333HMaa2VVv4+wdvebJkjWuW/xESoB8IwRcog8HYVYamb1g/R31Qv5Bx03g==}
@@ -845,6 +853,11 @@ packages:
 
   /csstype/2.6.20:
     resolution: {integrity: sha512-/WwNkdXfckNgw6S5R125rrW8ez139lBHWouiBvX8dfMFtcn6V81REDqnH7+CRpRipfYlyU1CmOnOxrmGcFOjeA==}
+    dev: false
+
+  /d3-format/3.1.0:
+    resolution: {integrity: sha512-YyUI6AEuY/Wpt8KWLgZHsIU86atmikuoOmCfommt0LYHiQSPjvX2AcFc38PX0CBpr2RCyZhjex+NS/LPOv6YqA==}
+    engines: {node: '>=12'}
     dev: false
 
   /debug/4.3.4:
