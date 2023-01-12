@@ -1,14 +1,14 @@
 <template>
-  <header class="p-component p-d-flex p-ai-center p-jc-between p-p-2 p-mb-3">
-    <strong class="p-component p-p-2">nyakov</strong>
-    <Button
+  <header class="p-component flex align-items-center justify-content-between p-2 mb-3">
+    <strong class="p-component p-2">nyakov</strong>
+    <PButton
       class="p-button-text"
       icon="pi pi-question-circle"
       @click="aboutVisible = true"
     />
   </header>
 
-  <main class="p-component p-p-3">
+  <main class="p-component p-3">
     <div v-if="current">
       <FakeQuote
         v-if="current"
@@ -18,15 +18,15 @@
       <CopyButton :data="current" />
     </div>
     <p
-      v-for="error in errors"
+      v-for="error of errors"
       :key="error"
-      class="error p-component p-m-2"
+      class="p-error p-component m-2"
     >
       {{ errorMessage(error) }}
     </p>
     <Divider v-if="current || errors.length > 0" />
 
-    <div class="p-d-flex">
+    <div class="flex">
       <span class="p-float-label">
         <InputText
           id="user"
@@ -37,7 +37,7 @@
         />
         <label for="user">Twitch user (optional)</label>
       </span>
-      <Button
+      <PButton
         class="no-round-left p-button-info"
         label="New&nbsp;quote"
         :loading="loading"
@@ -47,19 +47,19 @@
 
     <Accordion
       v-if="history.length > 0"
-      class="p-mt-2"
+      class="mt-2"
     >
       <AccordionTab header="History">
-        <ul class="p-p-0">
+        <ul class="p-0">
           <li
-            v-for="item in history"
-            :key="item"
-            class="history-item p-d-flex p-jc-between p-ai-center p-px-3"
+            v-for="(item, index) of history"
+            :key="index"
+            class="history-item flex justify-content-between align-items-center px-3"
           >
             <FakeQuote :data="item" />
             <CopyButton
               :data="item"
-              class="p-ml-2"
+              class="ml-2"
             />
           </li>
         </ul>
@@ -67,7 +67,7 @@
     </Accordion>
   </main>
 
-  <Dialog
+  <PDialog
     v-model:visible="aboutVisible"
     header="What&rsquo;s this?"
     :modal="true"
@@ -85,10 +85,10 @@
       <h3>Chatlog sources:</h3>
       <ul>
         <li
-          v-for="({ lines, logFiles, first, last }, channel) in sources"
+          v-for="({ lines, logFiles, first, last }, channel) of sources"
           :key="channel"
         >
-          <a :href="`https://www.twitch.tv/${channel}`">{{ channel }}</a>:
+          <a :href="`https://www.twitch.tv/${String(channel)}`">{{ channel }}</a>:
           {{ formatThousands(logFiles) }} days of chatlogs with {{ formatThousands(lines) }} lines,
           from <time>{{ first }}</time> to <time>{{ last }}</time>
         </li>
@@ -96,16 +96,16 @@
     </div>
 
     <template #footer>
-      <p class="p-d-flex p-ai-center">
+      <p class="flex align-items-center">
         <span>Made with</span>
         <img
-          class="emote p-mx-2"
+          class="emote mx-2"
           src="https://cdn.discordapp.com/emojis/745336981524971670.png"
         >
         <span>by <a href="https://aho.ge/home">aho</a></span>
       </p>
     </template>
-  </Dialog>
+  </PDialog>
 
   <Toast />
 </template>
@@ -116,8 +116,8 @@ import { defineComponent } from "vue";
 
 import Accordion from "primevue/accordion";
 import AccordionTab from "primevue/accordiontab";
-import Button from "primevue/button";
-import Dialog from "primevue/dialog";
+import PButton from "primevue/button";
+import PDialog from "primevue/dialog";
 import Divider from "primevue/divider";
 import InputText from "primevue/inputtext";
 import Toast from "primevue/toast";
@@ -129,6 +129,7 @@ import type { APIErrors, APIResponse, APISources, APISuccess } from "./types";
 
 import "normalize.css";
 import "@/../scss/main.css";
+import "@fontsource/roboto";
 import "primevue/resources/themes/md-dark-indigo/theme.css";
 import "primevue/resources/primevue.min.css";
 import "primeflex/primeflex.css";
@@ -148,7 +149,7 @@ interface AppData {
   errors: string[];
   history: APISuccess[];
   loading: boolean;
-  user: string | null;
+  user?: string;
   sources: Record<string, Source> | null;
 }
 
@@ -157,24 +158,27 @@ export default defineComponent({
   components: {
     Accordion,
     AccordionTab,
-    Button,
+    PButton,
     CopyButton,  // eslint-disable-line @typescript-eslint/no-unsafe-assignment
-    Dialog,
+    PDialog,
     Divider,
     FakeQuote,  // eslint-disable-line @typescript-eslint/no-unsafe-assignment
     InputText,
     Toast,
   },
   data() {
-    return {
+    const rv: AppData = {
       aboutVisible: false,
       current: null,
       errors: [],
       history: [],
       loading: false,
-      user: new URLSearchParams(location.search).get("user"),
       sources: null,
-    } as AppData;
+    };
+    const user = new URLSearchParams(location.search).get("user");
+    if (user)
+      rv.user = user;
+    return rv;
   },
   mounted(): void {
     void this.fetchQuote();

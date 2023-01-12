@@ -1,12 +1,12 @@
-import {resolve} from "path";
+import { resolve } from "path";
 
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import MiniCSSExtractPlugin from "mini-css-extract-plugin";
-import {VueLoaderPlugin} from "vue-loader";
-import {DefinePlugin} from "webpack";
+import { VueLoaderPlugin } from "vue-loader";
+import webpack from "webpack";
 
 
-const ROOT_PATH = "/";
+const ROOT_PATH = "/nyakov/";
 
 export default {
   entry: "./src/main.ts",
@@ -37,9 +37,10 @@ export default {
       {
         test: /\.ts$/u,
         loader: "ts-loader",
-	options: {
+        options: {
           appendTsSuffixTo: [/\.vue$/u],
         },
+        exclude: /node_modules/u,
       },
       {
         test: /\.(eot|svg|ttf|woff2?)$/u,
@@ -48,9 +49,6 @@ export default {
       {
         test: /\.vue$/u,
         loader: "vue-loader",
-	options: {
-          esModule: true,
-        },
       },
     ]
   },
@@ -61,7 +59,7 @@ export default {
     publicPath: ROOT_PATH,
   },
   plugins: [
-    new DefinePlugin({
+    new webpack.DefinePlugin({
       "process.env.ROOT_PATH": JSON.stringify(ROOT_PATH),
     }),
     new HtmlWebpackPlugin({

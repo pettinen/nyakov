@@ -1,3 +1,7 @@
+* {
+  font-family: Roboto, sans-serif;
+}
+
 body {
   background: var(--indigo-900);
   color: var(--text-color);

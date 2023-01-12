@@ -1,21 +1,21 @@
 <template>
-  <p class="p-component p-d-flex p-flex-wrap p-ai-center">
+  <p class="p-component flex flex-wrap align-items-center">
     <time
-      class="p-mr-1"
+      class="mr-1"
       v-text="data.timestamp"
     />
-    <span class="p-mr-1">{{ data.username }}:</span>
+    <span class="mr-1">{{ data.username }}:</span>
     <template v-for="(node, index) in data.message">
       <span
         v-if="node.type === 'text'"
-        :key="{node, index}"
-        class="p-mr-1"
+        :key="index"
+        class="mr-1"
         v-text="node.text"
       />
       <img
         v-if="node.type === 'emote'"
-        :key="{node, index}"
-        class="emote p-mr-1"
+        :key="index"
+        class="emote mr-1"
         :src="emoteURL(node)"
         :title="node.name"
         :alt="node.name"
