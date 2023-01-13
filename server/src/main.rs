@@ -1,14 +1,18 @@
-use std::{fs::{self, Permissions}, os::unix::{fs::PermissionsExt, net::UnixListener}, path::PathBuf};
+use std::{
+    fs::{self, Permissions},
+    os::unix::{fs::PermissionsExt, net::UnixListener},
+    path::PathBuf,
+};
 
 use clap::Parser;
 use poem::{listener::UnixAcceptor, Server};
 
 #[derive(Parser)]
 struct Args {
-    #[clap(short = 'd', long, parse(from_os_str))]
+    #[arg(short = 'd', long)]
     chatlog_directory: PathBuf,
 
-    #[clap(short, long)]
+    #[arg(short, long)]
     socket: PathBuf,
 }
 

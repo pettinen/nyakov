@@ -1,11 +1,13 @@
 use std::fmt;
 
-use poem::{error::ResponseError, http::{header, HeaderValue, StatusCode}, Body, Response};
+use poem::{
+    error::ResponseError,
+    http::{header, HeaderValue, StatusCode},
+    Body, Response,
+};
 use serde_json::{json, Value as JsonValue};
 
-enum ResponseComplete {
-    True,
-}
+struct CompleteErrorResponse;
 
 #[derive(Debug, thiserror::Error)]
 #[error("bad-request")]
@@ -26,7 +28,7 @@ impl ResponseError for BadRequest {
         Response::builder()
             .status(self.status())
             .content_type("application/json")
-            .extension(ResponseComplete::True)
+            .extension(CompleteErrorResponse)
             .body(Body::from_json(single_error("general", &self.0, None)).unwrap())
     }
 }
@@ -49,16 +51,19 @@ impl ResponseError for InternalError {
 }
 
 pub async fn error_handler(err: poem::error::Error) -> Response {
-    let res = err.as_response();
-    if let Some(ResponseComplete::True) = res.data::<ResponseComplete>() {
-        return res;
-    }
+    // What we're doing here:
+    // - if this was a BadRequest::new(), return it as is (ResponseComplete data set)
+    // - else, if this is a 5xx error, but not from InternalError, build an InternalError for logging
+    // - wrap the default string body in our error format
 
-    let (parts, body) = res.into_parts();
-    let (mut parts, body) = if parts.status.is_server_error() && !err.is::<InternalError>() {
+    let (mut parts, body) = if err.status().is_server_error() && !err.is::<InternalError>() {
         InternalError::new(&err).as_response().into_parts()
     } else {
-        (parts, body)
+        let res = err.into_response();
+        if res.data::<CompleteErrorResponse>().is_some() {
+            return res;
+        }
+        res.into_parts()
     };
 
     let original_body = match body.into_string().await {
@@ -68,7 +73,10 @@ pub async fn error_handler(err: poem::error::Error) -> Response {
 
     let error_id = match parts.status.canonical_reason() {
         Some(reason) => slugify(reason),
-        None => return InternalError::new(format!("unexpected status code {}", parts.status)).as_response(),
+        None => {
+            return InternalError::new(format!("unexpected status code {}", parts.status))
+                .as_response()
+        }
     };
 
     let (error_id, details) = if slugify(&original_body) == error_id {

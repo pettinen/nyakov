@@ -209,7 +209,10 @@ lazy_static! {
         ("HypeHay", "emotesv2_50e775355dbe4992a086f24ffaa73676"),
         ("HypeHeart", "304420791"),
         ("HypeHeh", "emotesv2_62199faa2ca34ea8a0f3567990a72a14"),
-        ("HypeHeyFriends", "emotesv2_be2e7ac3e077421da3526633fbbb9176"),
+        (
+            "HypeHeyFriends",
+            "emotesv2_be2e7ac3e077421da3526633fbbb9176"
+        ),
         ("HypeHide", "emotesv2_6a99bc2baae743099b23ed6ab07bc5c4"),
         ("HypeHit", "304420797"),
         ("HypeJewel", "301739492"),
@@ -544,11 +547,23 @@ lazy_static! {
         ("neonyaDab", "303040831"),
         ("neonyaHi", "302225947"),
         ("neonyaJam", "302172076"),
-        ("neonyaKakkActivated", "emotesv2_cf0a56dc9be8477aae4a8676b491de2d"),
-        ("neonyaKakkakun", "emotesv2_e97e5d0e93e84e4697d15e320ef890c3"),
+        (
+            "neonyaKakkActivated",
+            "emotesv2_cf0a56dc9be8477aae4a8676b491de2d"
+        ),
+        (
+            "neonyaKakkakun",
+            "emotesv2_e97e5d0e93e84e4697d15e320ef890c3"
+        ),
         ("neonyaLove", "302172049"),
-        ("neonyaRainbowWink", "emotesv2_f326b4276b6641f580956dfdba3086dc"),
-        ("neonyaRainbowkun", "emotesv2_85d7d9995f98419fac5098e1bec4ac21"),
+        (
+            "neonyaRainbowWink",
+            "emotesv2_f326b4276b6641f580956dfdba3086dc"
+        ),
+        (
+            "neonyaRainbowkun",
+            "emotesv2_85d7d9995f98419fac5098e1bec4ac21"
+        ),
         ("neonyaRave", "303040793"),
         ("neonyaWink", "303041004"),
         ("panicBasket", "22998"),
@@ -556,8 +571,6 @@ lazy_static! {
         ("riPepperonis", "62833"),
         ("twitchRaid", "62836"),
     ]);
-
-
     pub static ref BTTV_EMOTES: HashMap<&'static str, &'static str> = HashMap::from([
         ("02Hype", "5b5217dd379b93298eb05e13"),
         ("02HypeFlip", "5f10124f19a5bd0524ecbdf1"),

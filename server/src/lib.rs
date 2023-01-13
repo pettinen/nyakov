@@ -1,4 +1,11 @@
-use std::{collections::{HashMap, HashSet}, fs::File, io::{BufRead, BufReader}, ops::Deref, path::PathBuf, sync::Mutex};
+use std::{
+    collections::{HashMap, HashSet},
+    fs::File,
+    io::{BufRead, BufReader},
+    ops::Deref,
+    path::PathBuf,
+    sync::Mutex,
+};
 
 use chrono::NaiveDate;
 use lazy_static::lazy_static;
@@ -54,7 +61,6 @@ lazy_static! {
     static ref USERNAMES: Mutex<CountMap> = Mutex::new(CountMap::new());
     static ref TIMESTAMPS: Mutex<HashMap<String, CountMap>> = Mutex::new(HashMap::new());
     static ref WORD_MAP: Mutex<HashMap<String, CountMap>> = Mutex::new(HashMap::new());
-
     static ref NORMALIZE_RE: Regex = Regex::new(r#"[-';!?_@,."']"#).unwrap();
 }
 
@@ -82,11 +88,11 @@ impl Serialize for Word {
                 map.serialize_entry("name", &emote.name)?;
                 map.serialize_entry("source", &emote.source)?;
                 map.serialize_entry("type", "emote")?;
-            },
+            }
             Self::Text(text) => {
                 map.serialize_entry("text", text)?;
                 map.serialize_entry("type", "text")?;
-            },
+            }
         }
         map.end()
     }
@@ -99,7 +105,7 @@ struct GenerateQuoteParams {
 
 #[handler]
 async fn generate_quote(
-    Query(GenerateQuoteParams { user }): Query<GenerateQuoteParams>
+    Query(GenerateQuoteParams { user }): Query<GenerateQuoteParams>,
 ) -> poem::Result<Response> {
     let alternatives = ALTERNATIVES.lock().unwrap();
     let first_words = FIRST_WORDS.lock().unwrap();
@@ -114,7 +120,7 @@ async fn generate_quote(
                 Err(BadRequest::new("user-not-found"))?;
             }
             username
-        },
+        }
         None => weighted_random(&usernames.counts, usernames.total).to_owned(),
     };
 
@@ -150,20 +156,23 @@ async fn sources() -> poem::Result<Response> {
 
 fn json_response<T: Serialize>(body: T) -> poem::Result<Response> {
     Ok(Response::builder()
-       .content_type("application/json")
-       .body(Body::from_json(body).map_err(InternalError::new)?))
+        .content_type("application/json")
+        .body(Body::from_json(body).map_err(InternalError::new)?))
 }
 
 fn expect_get<'a, T>(map: &'a HashMap<String, T>, word: &'a str) -> Result<&'a T, InternalError> {
-    map.get(word).ok_or_else(||
-        InternalError::new(format!("could not find word `{}` supposed to be in map", word))
-    )
+    map.get(word).ok_or_else(|| {
+        InternalError::new(format!(
+            "could not find word `{}` supposed to be in map",
+            word
+        ))
+    })
 }
 
 macro_rules! get {
     ($endpoint:ident) => {
         poem::get($endpoint).head($endpoint)
-    }
+    };
 }
 
 fn get_word(text: &str) -> Word {
@@ -172,14 +181,14 @@ fn get_word(text: &str) -> Word {
             id: id.to_owned(),
             name: text.to_owned(),
             source: "bttv".to_owned(),
-        })
+        });
     }
     if let Some(&id) = TWITCH_EMOTES.get(text) {
         return Word::Emote(Emote {
             id: id.to_owned(),
             name: text.to_owned(),
             source: "twitch".to_owned(),
-        })
+        });
     }
     Word::Text(text.to_owned())
 }
@@ -239,7 +248,7 @@ pub fn create_app(chatlog_directory: &PathBuf) -> impl Endpoint<Output = Respons
                 Err(err) => {
                     warnings.insert(format!("{}", err));
                     return None;
-                },
+                }
             };
             let path = entry.path();
             let (channel_name, date) = {
@@ -247,16 +256,19 @@ pub fn create_app(chatlog_directory: &PathBuf) -> impl Endpoint<Output = Respons
                 let file_name = match file_name.to_str() {
                     Some(file_name) => file_name,
                     None => {
-                        warnings.insert(format!("invalid file name: {}", file_name.to_string_lossy()));
+                        warnings.insert(format!(
+                            "invalid file name: {}",
+                            file_name.to_string_lossy()
+                        ));
                         return None;
-                    },
+                    }
                 };
                 let captures = match chatlog_re.captures(file_name) {
                     Some(captures) => captures,
                     None => {
                         warnings.insert(format!("invalid file name format: {}", file_name));
                         return None;
-                    },
+                    }
                 };
                 let channel_name = captures.get(1).unwrap().as_str().to_owned();
                 let date = captures.get(2).unwrap().as_str();
@@ -265,7 +277,7 @@ pub fn create_app(chatlog_directory: &PathBuf) -> impl Endpoint<Output = Respons
                     Err(_) => {
                         warnings.insert(format!("invalid date in file name: {}", date));
                         return None;
-                    },
+                    }
                 };
                 (channel_name, date)
             };
@@ -278,147 +290,163 @@ pub fn create_app(chatlog_directory: &PathBuf) -> impl Endpoint<Output = Respons
         .collect();
 
     for log_file in files {
-            let file = match File::open(&log_file.path) {
-                Ok(file) => file,
+        let file = match File::open(&log_file.path) {
+            Ok(file) => file,
+            Err(err) => {
+                warnings.insert(format!(
+                    "could not open {}: {}",
+                    log_file.path.to_string_lossy(),
+                    err
+                ));
+                continue;
+            }
+        };
+
+        let mut lines = 0;
+
+        for (index, line) in BufReader::new(file).lines().enumerate() {
+            let line = match line {
+                Ok(line) => line,
                 Err(err) => {
-                    warnings.insert(format!("could not open {}: {}", log_file.path.to_string_lossy(), err));
+                    warnings.insert(format!(
+                        "could not read line {} in {}: {}",
+                        index,
+                        log_file.path.to_string_lossy(),
+                        err
+                    ));
                     continue;
-                },
+                }
+            };
+            let captures = match message_re.captures(&line) {
+                Some(captures) => captures,
+                None => {
+                    warnings.insert(format!("invalid format for line: {}", line));
+                    continue;
+                }
             };
 
-            let mut lines = 0;
-
-            for (index, line) in BufReader::new(file).lines().enumerate() {
-                let line = match line {
-                    Ok(line) => line,
-                    Err(err) => {
-                        warnings.insert(
-                            format!("could not read line {} in {}: {}", index, log_file.path.to_string_lossy(), err)
-                        );
-                        continue;
-                    },
-                };
-                let captures = match message_re.captures(&line) {
-                    Some(captures) => captures,
-                    None => {
-                        warnings.insert(format!("invalid format for line: {}", line));
-                        continue;
-                    },
-                };
-
-                let timestamp = match captures.get(1) {
-                    Some(timestamp) => timestamp.as_str(),
-                    None => {
-                        warnings.insert(format!("invalid timestamp format: {}", line));
-                        continue;
-                    },
-                };
-
-                if let Some(message) = captures.get(2) {
-                    let mut words = vec![""];
-                    let mut split_message = whitespace_re.split(message.as_str());
-
-                    let username = match split_message.next() {
-                        Some(username) => username,
-                        None => {
-                            warnings.insert(format!("empty message: {}", line));
-                            continue;
-                        }
-                    };
-
-                    words.extend(split_message);
-                    if words.len() < MIN_MESSAGE_WORDS + 1 {
-                        continue;
-                    }
-
-                    let username = match username.strip_suffix(':') {
-                        Some(username) => username,
-                        None => {
-                            warnings.insert(format!("invalid username: {}", line));
-                            continue;
-                        }
-                    };
-
-                    if let Some(count) = usernames.counts.get_mut(username) {
-                        *count += 1;
-                    } else {
-                        usernames.counts.insert(username.to_owned(), 1);
-                    }
-                    usernames.total += 1;
-
-                    if let Some(timestamps_map) = timestamps.get_mut(username) {
-                        if let Some(count) = timestamps_map.counts.get_mut(timestamp) {
-                            *count += 1;
-                        } else {
-                            timestamps_map.counts.insert(timestamp.to_owned(), 1);
-                        }
-                        timestamps_map.total += 1;
-                    } else {
-                        timestamps.insert(username.to_owned(), CountMap::new_with_item(timestamp.to_owned()));
-                    }
-
-                    let first_word = normalize_word(words[1]);
-                    if let Some(first_words_map) = first_words.get_mut(username) {
-                        if let Some(count) = first_words_map.counts.get_mut(&first_word) {
-                            *count += 1;
-                        } else {
-                            first_words_map.counts.insert(first_word, 1);
-                        }
-                        first_words_map.total += 1;
-                    } else {
-                        first_words.insert(username.to_owned(), CountMap::new_with_item(first_word));
-                    }
-
-                    words.push("");
-                    for (&current, &next) in words.iter().zip(&words[1..]) {
-                        let current_norm = normalize_word(&current);
-                        if let Some(alts) = alternatives.get_mut(&current_norm) {
-                            if let Some(count) = alts.counts.get_mut(current) {
-                                *count += 1;
-                            } else {
-                                alts.counts.insert(current.to_owned(), 1);
-                            }
-                            alts.total += 1;
-                        } else {
-                            alternatives.insert(current_norm.clone(), CountMap::new_with_item(current.to_owned()));
-                        }
-
-                        let next_norm = normalize_word(next);
-                        if let Some(word_map_inner) = word_map.get_mut(&current_norm) {
-                            if let Some(count) = word_map_inner.counts.get_mut(&next_norm) {
-                                *count += 1;
-                            } else {
-                                word_map_inner.counts.insert(next_norm, 1);
-                            }
-                            word_map_inner.total += 1;
-                        } else {
-                            word_map.insert(current_norm, CountMap::new_with_item(next_norm));
-                        }
-                    }
-                    lines += 1;
-                } else {
-                    warnings.insert(format!("invalid message format: {}", line));
+            let timestamp = match captures.get(1) {
+                Some(timestamp) => timestamp.as_str(),
+                None => {
+                    warnings.insert(format!("invalid timestamp format: {}", line));
                     continue;
                 }
-            }
+            };
 
-            if let Some(channel_meta) = metadata.get_mut(&log_file.channel_name) {
-                channel_meta.lines += lines;
-                channel_meta.log_files += 1;
-                if log_file.date < channel_meta.first {
-                    channel_meta.first = log_file.date;
+            if let Some(message) = captures.get(2) {
+                let mut words = vec![""];
+                let mut split_message = whitespace_re.split(message.as_str());
+
+                let username = match split_message.next() {
+                    Some(username) => username,
+                    None => {
+                        warnings.insert(format!("empty message: {}", line));
+                        continue;
+                    }
+                };
+
+                words.extend(split_message);
+                if words.len() < MIN_MESSAGE_WORDS + 1 {
+                    continue;
                 }
-                if log_file.date > channel_meta.last {
-                    channel_meta.last = log_file.date;
+
+                let username = match username.strip_suffix(':') {
+                    Some(username) => username,
+                    None => {
+                        warnings.insert(format!("invalid username: {}", line));
+                        continue;
+                    }
+                };
+
+                if let Some(count) = usernames.counts.get_mut(username) {
+                    *count += 1;
+                } else {
+                    usernames.counts.insert(username.to_owned(), 1);
                 }
+                usernames.total += 1;
+
+                if let Some(timestamps_map) = timestamps.get_mut(username) {
+                    if let Some(count) = timestamps_map.counts.get_mut(timestamp) {
+                        *count += 1;
+                    } else {
+                        timestamps_map.counts.insert(timestamp.to_owned(), 1);
+                    }
+                    timestamps_map.total += 1;
+                } else {
+                    timestamps.insert(
+                        username.to_owned(),
+                        CountMap::new_with_item(timestamp.to_owned()),
+                    );
+                }
+
+                let first_word = normalize_word(words[1]);
+                if let Some(first_words_map) = first_words.get_mut(username) {
+                    if let Some(count) = first_words_map.counts.get_mut(&first_word) {
+                        *count += 1;
+                    } else {
+                        first_words_map.counts.insert(first_word, 1);
+                    }
+                    first_words_map.total += 1;
+                } else {
+                    first_words.insert(username.to_owned(), CountMap::new_with_item(first_word));
+                }
+
+                words.push("");
+                for (&current, &next) in words.iter().zip(&words[1..]) {
+                    let current_norm = normalize_word(&current);
+                    if let Some(alts) = alternatives.get_mut(&current_norm) {
+                        if let Some(count) = alts.counts.get_mut(current) {
+                            *count += 1;
+                        } else {
+                            alts.counts.insert(current.to_owned(), 1);
+                        }
+                        alts.total += 1;
+                    } else {
+                        alternatives.insert(
+                            current_norm.clone(),
+                            CountMap::new_with_item(current.to_owned()),
+                        );
+                    }
+
+                    let next_norm = normalize_word(next);
+                    if let Some(word_map_inner) = word_map.get_mut(&current_norm) {
+                        if let Some(count) = word_map_inner.counts.get_mut(&next_norm) {
+                            *count += 1;
+                        } else {
+                            word_map_inner.counts.insert(next_norm, 1);
+                        }
+                        word_map_inner.total += 1;
+                    } else {
+                        word_map.insert(current_norm, CountMap::new_with_item(next_norm));
+                    }
+                }
+                lines += 1;
             } else {
-                metadata.insert(log_file.channel_name, Metadata {
+                warnings.insert(format!("invalid message format: {}", line));
+                continue;
+            }
+        }
+
+        if let Some(channel_meta) = metadata.get_mut(&log_file.channel_name) {
+            channel_meta.lines += lines;
+            channel_meta.log_files += 1;
+            if log_file.date < channel_meta.first {
+                channel_meta.first = log_file.date;
+            }
+            if log_file.date > channel_meta.last {
+                channel_meta.last = log_file.date;
+            }
+        } else {
+            metadata.insert(
+                log_file.channel_name,
+                Metadata {
                     lines,
                     log_files: 1,
                     first: log_file.date,
                     last: log_file.date,
-                });
-            }
+                },
+            );
+        }
     }
 
     for warning in warnings {
